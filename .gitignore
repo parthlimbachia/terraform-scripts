@@ -4,5 +4,6 @@
 **/.terraform/*
 **/*.tfstate
 **/*.tfstate.*
+**/*lock.hcl
 
 
