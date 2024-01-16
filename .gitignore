@@ -1,0 +1,6 @@
+dev/.terraform
+dev/.terraform/*
+stage/.terraform
+stage/.terraform/*
+prod/.terraform
+prod/.terraform/*
