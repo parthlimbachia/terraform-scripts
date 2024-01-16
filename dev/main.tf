@@ -55,4 +55,27 @@ resource "aws_route_table_association" "public_subnet_asso" {
   route_table_id = aws_route_table.second_rt.id
 }
 
+resource "aws_security_group" "sec_group_alb" {
+  name        = "sec_group_alb"
+  description = "Security group for Load balancer"
+  vpc_id      = aws_vpc.main.id
 
+  # Ingress rule for HTTP (port 80)
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Ingress rule for HTTPS (port 443)
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    Name = "${var.environment}-sec_group_alb"
+  }
+}
