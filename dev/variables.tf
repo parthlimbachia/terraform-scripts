@@ -27,3 +27,28 @@ variable "db_identifier" {
   type        = string
   description = "Database identifier"
 }
+
+variable "db_instance_class" {
+  type        = string
+  description = "Database instance"
+}
+
+variable "db_version" {
+  type        = string
+  description = "Database version"
+}
+
+variable "db_storage" {
+  type        = number
+  description = "Database storage size"
+}
+
+variable "db_username" {
+  type        = string
+  description = "Database username"
+}
+
+variable "db_password" {
+  type        = string
+  description = "Database password"
+}

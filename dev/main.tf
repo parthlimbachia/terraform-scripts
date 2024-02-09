@@ -175,13 +175,14 @@ resource "aws_lb_target_group" "target_group" {
   target_type = "ip"
 
   health_check {
-    path                = "/"    # Set the health check path
-    protocol            = "HTTP" # Set the health check protocol
-    port                = "3000" # Set the port for health checks
-    interval            = 5      # Set the health check interval in seconds
-    timeout             = 3      # Set the health check timeout in seconds
-    healthy_threshold   = 2      # Set the number of consecutive successful health checks required to consider the target healthy
-    unhealthy_threshold = 2      # Set the number of consecutive failed health checks required to consider the target unhealthy
+    path                = "/"       # Set the health check path
+    protocol            = "HTTP"    # Set the health check protocol
+    port                = "3000"    # Set the port for health checks
+    interval            = 5         # Set the health check interval in seconds
+    timeout             = 3         # Set the health check timeout in seconds
+    healthy_threshold   = 2         # Set the number of consecutive successful health checks required to consider the target healthy
+    unhealthy_threshold = 2         # Set the number of consecutive failed health checks required to consider the target unhealthy
+    matcher             = "200-399" #Success codes
   }
 
   tags = {
@@ -200,15 +201,38 @@ resource "aws_lb" "load_balancer" {
   security_groups = [aws_security_group.sec_group_alb.id] # Set the security group ID for the load balancer
 }
 
+resource "aws_lb_listener" "http_listener" {
+  load_balancer_arn = aws_lb.load_balancer.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.target_group.arn
+  }
+}
+
+resource "aws_lb_listener" "https_listener" {
+  load_balancer_arn = aws_lb.load_balancer.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = "arn:aws:acm:us-east-1:961664003051:certificate/d31b3895-e5a9-4487-8c3b-7fd58fbeb501"
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.target_group.arn
+  }
+}
+
 resource "aws_db_instance" "postgres_db" {
   identifier              = var.db_identifier
-  instance_class          = "db.m5.large"
+  instance_class          = var.db_instance_class
   engine                  = "postgres"
-  engine_version          = "15.4"
-  allocated_storage       = 20
+  engine_version          = var.db_version
+  allocated_storage       = var.db_storage
   storage_type            = "gp2"
-  username                = "postgres"
-  password                = "T1iFRositho7"
+  username                = var.db_username
+  password                = var.db_password
   publicly_accessible     = false
   backup_retention_period = 7
   vpc_security_group_ids  = [aws_security_group.allow_port_5432_from_other_sg.id] # Associate RDS instance with the specified security group
