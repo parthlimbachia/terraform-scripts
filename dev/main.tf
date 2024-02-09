@@ -166,3 +166,62 @@ resource "aws_ecs_cluster" "ecs_cluster" {
     Project     = "Streamocracy"
   }
 }
+
+resource "aws_lb_target_group" "target_group" {
+  name        = "${var.environment}-target-gp"
+  port        = 80              # Set the port for your target group
+  protocol    = "HTTP"          # Set the protocol for your target group
+  vpc_id      = aws_vpc.main.id # Set the VPC ID where the target group should be created
+  target_type = "ip"
+
+  health_check {
+    path                = "/"    # Set the health check path
+    protocol            = "HTTP" # Set the health check protocol
+    port                = "3000" # Set the port for health checks
+    interval            = 5      # Set the health check interval in seconds
+    timeout             = 3      # Set the health check timeout in seconds
+    healthy_threshold   = 2      # Set the number of consecutive successful health checks required to consider the target healthy
+    unhealthy_threshold = 2      # Set the number of consecutive failed health checks required to consider the target unhealthy
+  }
+
+  tags = {
+    Name        = "${var.environment}-target-gp"
+    Environment = "${var.environment}"
+  }
+}
+
+resource "aws_lb" "load_balancer" {
+  name               = "${var.environment}-alb" # Set the name for your load balancer
+  internal           = false                    # Set to true if it's an internal load balancer
+  load_balancer_type = "application"            # Set the load balancer type to "application"
+
+  subnets = aws_subnet.public_subnets[*].id # Set the subnet IDs where the load balancer will be deployed
+
+  security_groups = [aws_security_group.sec_group_alb.id] # Set the security group ID for the load balancer
+}
+
+resource "aws_db_instance" "postgres_db" {
+  identifier              = var.db_identifier
+  instance_class          = "db.m5.large"
+  engine                  = "postgres"
+  engine_version          = "15.4"
+  allocated_storage       = 20
+  storage_type            = "gp2"
+  username                = "postgres"
+  password                = "T1iFRositho7"
+  publicly_accessible     = false
+  backup_retention_period = 7
+  vpc_security_group_ids  = [aws_security_group.allow_port_5432_from_other_sg.id] # Associate RDS instance with the specified security group
+  db_subnet_group_name    = aws_db_subnet_group.my_db_subnet_group.name           # Use the private subnet group
+
+  tags = {
+    Name        = "${var.environment}-db"
+    Environment = "${var.environment}"
+  }
+}
+
+# Create DB subnet group
+resource "aws_db_subnet_group" "my_db_subnet_group" {
+  name       = "${var.environment}-db-subnet-gp"
+  subnet_ids = aws_subnet.private_subnets[*].id # Use the private subnets
+}

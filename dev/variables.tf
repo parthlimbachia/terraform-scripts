@@ -22,3 +22,8 @@ variable "azs" {
   type        = list(string)
   description = "Availability Zones"
 }
+
+variable "db_identifier" {
+  type        = string
+  description = "Database identifier"
+}
