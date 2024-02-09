@@ -75,7 +75,94 @@ resource "aws_security_group" "sec_group_alb" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   tags = {
     Name = "${var.environment}-sec_group_alb"
+  }
+}
+
+resource "aws_security_group" "allow_port_5432_from_other_sg" {
+  name        = "allow-port-5432-from-other-sg"
+  description = "Allow inbound traffic on port 5432 from another security group"
+  vpc_id      = aws_vpc.main.id
+
+  # Define inbound rule to allow traffic on port 5432 from another security group
+  ingress {
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.sec_group_alb.id]
+  }
+
+  # Define outbound rule to allow all traffic
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    Name = "${var.environment}-sec_rds_sg"
+  }
+}
+
+resource "aws_security_group" "allow_port_6379_from_other_sg" {
+  name        = "allow-port-6379-from-other-sg"
+  description = "Allow inbound traffic on port 6379 from another security group"
+  vpc_id      = aws_vpc.main.id
+
+  # Define inbound rule to allow traffic on port 5432 from another security group
+  ingress {
+    from_port       = 6379
+    to_port         = 6379
+    protocol        = "tcp"
+    security_groups = [aws_security_group.allow_port_5432_from_other_sg.id]
+  }
+
+  # Define outbound rule to allow all traffic
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    Name = "${var.environment}-sec_redis_sg"
+  }
+}
+
+resource "aws_ecr_repository" "frontend_repository" {
+  name = "${var.environment}-frontend"
+  tags = {
+    Name = "${var.environment}-frontend"
+  }
+}
+
+resource "aws_ecr_repository" "backend_repository" {
+  name = "${var.environment}-backend"
+  tags = {
+    Name = "${var.environment}-backend"
+  }
+}
+
+resource "aws_ecr_repository" "sidekiq_repository" {
+  name = "${var.environment}-sidekiq"
+  tags = {
+    Name = "${var.environment}-sidekiq"
+  }
+}
+
+resource "aws_ecs_cluster" "ecs_cluster" {
+  name = "${var.environment}-cluster"
+  tags = {
+    Environment = "${var.environment}"
+    Project     = "Streamocracy"
   }
 }
