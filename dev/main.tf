@@ -169,7 +169,7 @@ resource "aws_ecs_cluster" "ecs_cluster" {
 
 resource "aws_lb_target_group" "target_group" {
   name        = "${var.environment}-target-gp"
-  port        = 80              # Set the port for your target group
+  port        = 3000              # Set the port for your target group
   protocol    = "HTTP"          # Set the protocol for your target group
   vpc_id      = aws_vpc.main.id # Set the VPC ID where the target group should be created
   target_type = "ip"
