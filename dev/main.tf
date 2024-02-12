@@ -113,6 +113,8 @@ resource "aws_security_group" "allow_port_5432_from_other_sg" {
   }
 }
 
+
+
 resource "aws_security_group" "allow_port_6379_from_other_sg" {
   name        = "allow-port-6379-from-other-sg"
   description = "Allow inbound traffic on port 6379 from another security group"
@@ -135,6 +137,32 @@ resource "aws_security_group" "allow_port_6379_from_other_sg" {
   }
   tags = {
     Name = "${var.environment}-sec_redis_sg"
+  }
+}
+
+resource "aws_security_group" "allow_traffic_from_alb" {
+  name        = "allow-traffic-from-alb"
+  description = "Allow inbound traffic from alb"
+  vpc_id      = aws_vpc.main.id
+
+  # Define inbound rule to allow traffic from another load balancer security group
+  ingress {
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
+    security_groups = [aws_security_group.sec_group_alb.id]
+    description     = "Accept all traffic from sec_group_alb"
+  }
+
+  # Define outbound rule to allow all traffic
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    Name = "${var.environment}-web-sg"
   }
 }
 
@@ -169,7 +197,7 @@ resource "aws_ecs_cluster" "ecs_cluster" {
 
 resource "aws_lb_target_group" "target_group" {
   name        = "${var.environment}-target-gp"
-  port        = 3000              # Set the port for your target group
+  port        = 80              # Set the port for your target group
   protocol    = "HTTP"          # Set the protocol for your target group
   vpc_id      = aws_vpc.main.id # Set the VPC ID where the target group should be created
   target_type = "ip"
