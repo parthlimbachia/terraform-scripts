@@ -5,7 +5,11 @@ You will need to create a file terraform.tfvars which will hold all the variable
 **Commands:**
 
 terraform init
+
 terraform validate
+
 terraform fmt
+
 terraform plan
+
 terraform apply --auto-approve
