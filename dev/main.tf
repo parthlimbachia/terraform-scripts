@@ -88,33 +88,6 @@ resource "aws_security_group" "sec_group_alb" {
   }
 }
 
-resource "aws_security_group" "allow_port_5432_from_other_sg" {
-  name        = "allow-port-5432-from-other-sg"
-  description = "Allow inbound traffic on port 5432 from another security group"
-  vpc_id      = aws_vpc.main.id
-
-  # Define inbound rule to allow traffic on port 5432 from another security group
-  ingress {
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [aws_security_group.sec_group_alb.id]
-  }
-
-  # Define outbound rule to allow all traffic
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  tags = {
-    Name = "${var.environment}-sec_rds_sg"
-  }
-}
-
-
-
 resource "aws_security_group" "allow_port_6379_from_other_sg" {
   name        = "allow-port-6379-from-other-sg"
   description = "Allow inbound traffic on port 6379 from another security group"
@@ -151,7 +124,7 @@ resource "aws_security_group" "allow_traffic_from_alb" {
     to_port         = 0
     protocol        = "-1"
     security_groups = [aws_security_group.sec_group_alb.id]
-    description     = "Accept all traffic from sec_group_alb"
+    description     = "Accept all traffic from Load balancer SG into ECS containers"
   }
 
   # Define outbound rule to allow all traffic
@@ -163,6 +136,32 @@ resource "aws_security_group" "allow_traffic_from_alb" {
   }
   tags = {
     Name = "${var.environment}-web-sg"
+  }
+}
+
+resource "aws_security_group" "allow_port_5432_from_other_sg" {
+  name        = "allow-port-5432-from-other-sg"
+  description = "Allow inbound traffic into DB from ECS security group"
+  vpc_id      = aws_vpc.main.id
+
+  # Define inbound rule to allow traffic on port 5432 from another security group
+  ingress {
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
+    security_groups = [aws_security_group.allow_traffic_from_alb.id]
+    description     = "Accept all traffic from ECS containers into Postgres RDS SG"
+  }
+
+  # Define outbound rule to allow all traffic
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    Name = "${var.environment}-sec_rds_sg"
   }
 }
 
